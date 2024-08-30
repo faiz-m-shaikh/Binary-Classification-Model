@@ -1,0 +1,126 @@
+---
+title: "Heart Data Set Analysis"
+output: html_notebook
+---
+
+```{r}
+# Exploratory Analysis of the Data Set:
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+setwd("/Users/faizshaikh/Downloads/archive")
+
+heart_data <- read.csv("heart.csv")
+
+# Viewing the structure of the data set:
+str(heart_data)
+
+# Summary statistics of the numeric variables:
+summary(heart_data[c("age", "trtbps", "chol", "thalachh")])
+
+# Creating frequency table for the categorical variables:
+table(heart_data$Sex)
+table(heart_data$exang)
+table(heart_data$ca)
+table(heart_data$cp)
+table(heart_data$fbs)
+table(heart_data$rest_ecg)
+table(heart_data$target)
+
+# Plotting distributions of the numeric variables:
+numeric_vars <- c("age", "trtbps", "chol", "thalachh")
+numeric_plots <- lapply(numeric_vars, function(var) {
+  ggplot(heart_data, aes_string(x = var)) +
+    geom_histogram(binwidth = 5, fill = "blue", color = "black") +
+    labs(title = paste("Distribution of", var), x = var, y = "Frequency")
+})
+
+output_print <- ggplot(heart_data, aes(x = as.factor(output))) +
+             geom_bar(fill = "blue") +
+             scale_y_continuous(labels = scales::comma) +
+             labs(title = "Distribution of Output", x = "Output", y = "Frequency")
+
+print(output_print)
+
+gender <- ggplot(heart_data, aes(x = as.factor(sex))) +
+             geom_bar(fill = "blue") +
+             scale_y_continuous(labels = scales::comma) +
+             labs(title = "Distribution of Gender", x = "Gender", y = "Frequency")
+
+print(gender)
+
+caa_print <- ggplot(heart_data, aes(x = as.factor(caa))) +
+             geom_bar(fill = "blue") +
+             scale_y_continuous(labels = scales::comma) +
+             labs(title = "Distribution of Major Vessels", x = "Major Vessels", y = "Frequency")
+
+print(caa_print)
+
+cp_print <- ggplot(heart_data, aes(x = as.factor(cp))) +
+             geom_bar(fill = "blue") +
+             scale_y_continuous(labels = scales::comma) +
+             labs(title = "Distribution of Chest Pain", x = "Chest Pain Level", y = "Frequency")
+
+print(cp_print)
+
+
+# Printing the plots
+for (plot in numeric_plots) {
+  print(plot)
+}
+
+```
+
+```{r}
+library(rpart)
+library(caret)
+library(e1071)
+
+setwd("/Users/faizshaikh/Downloads/archive")
+
+heart_data <- read.csv("heart.csv")
+
+set.seed(100)
+
+# Factorizing the categorical variables.
+heart_data$sex <- as.factor(heart_data$sex)
+heart_data$cp <- as.factor(heart_data$cp)
+heart_data$fbs <- as.factor(heart_data$fbs)
+heart_data$restecg <- as.factor(heart_data$restecg)
+heart_data$exng <- as.factor(heart_data$exng)
+heart_data$slp <- as.factor(heart_data$slp)
+heart_data$caa <- as.factor(heart_data$caa)
+heart_data$thall <- as.factor(heart_data$thall)
+
+# Building the decision tree model using RPart()
+model <- rpart(output ~ cp + fbs + restecg + exng + slp + caa + thall, data = heart_data, method = "class", cp = 0.000015, minsplit = 10, minbucket = 2)
+predictions <- predict(model, newdata = heart_data, type = "class")
+
+# Creating the confusion matrix for RPart:
+print("Confusion Matrix for R-Part:")
+cm <- table(heart_data$output, predictions)
+print(cm)
+
+# =========================================================================================
+
+# Building the Naïve-Bayes model:
+nb_model <- naiveBayes(output ~ cp + fbs + restecg + exng + slp + caa + thall, data = heart_data)
+nb_predictions <- predict(nb_model, newdata = heart_data)
+
+# Creating the confusion matrix for Naïve Bayes:
+nb_cm <- table(heart_data$output, nb_predictions)
+print("Confusion Matrix for Naïve Bayes:")
+print(nb_cm)
+
+# =========================================================================================
+
+# Calculating accuracy for Naïve-Bayes (based upon confusion matrix results):
+nb_accuracy <- sum(diag(nb_cm)) / sum(nb_cm)
+print(paste("Accuracy for Naïve Bayes:", nb_accuracy))
+
+# Calculating accuracy for RPart (based upon confusion matrix results):
+rpart_accuracy <- sum(diag(cm)) / sum(cm)
+print(paste("Accuracy for rpart:", rpart_accuracy))
+```
